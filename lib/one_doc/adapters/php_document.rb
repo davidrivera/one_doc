@@ -28,6 +28,59 @@ module OneDoc
       end
     end
 
+    def new_classes(node)
+      node.xpath('./class').map do |klass|
+        a = {
+            :structure => 'class',
+            :name => name_for(klass),
+            :doc => docblock_for(klass),
+            :members => [
+                {
+                    :type => 'extends',
+                    :value => klass.xpath('./extends').text
+                },
+                {
+                    :type => 'final',
+                    :value => klass.attribute('final').value
+                },
+                {
+                    :type => 'abstract',
+                    :value => klass.attribute('abstract').value
+                },
+                {
+                    :type => 'abstract',
+                    :value => klass.attribute('abstract').value
+                }
+            ]
+        }
+
+        new_functions(klass, a)
+
+        new_properties(klass, a)
+
+        a
+      end
+    end
+
+    def new_functions(klass, hash)
+      klass.xpath('./method').map do |method|
+        hash[:members] << {
+            :type => 'function',
+            :value => {
+                :doc => docblock_for(method),
+                :params => params_for(method),
+                :visibility => method.attribute('visibility').value,
+                :abstract => method.attribute('abstract').value,
+                :static => method.attribute('static').value,
+                :final => method.attribute('final').value,
+                :line => method.attribute('line').value,
+                :inherited_from => method.xpath('./inherited_from').text,
+                :name => name_for(method)
+            }
+        }
+      end
+    end
+
     def functions(klass)
       klass.xpath('./method').map do |method|
         {
@@ -47,13 +100,25 @@ module OneDoc
 
     def files
       @xml_doc.xpath('//file').map do |file|
-        {
+
+        a = {
             :hash => file.attribute('hash').value,
             :name => file.attribute('path').value,
             :doc => docblock_for(file),
-            :classes => classes(file),
-            :traits => traits(file)
+            # :classes => classes(file),
+            # :traits => traits(file),
+            :data => []
         }
+
+        if has_classes(file)
+          a[:data] << new_classes(file)
+        end
+
+        if has_traits(file)
+          a[:data] << new_traits(file)
+        end
+
+        a
       end
     end
 
@@ -64,6 +129,14 @@ module OneDoc
     end
 
     private
+
+    def has_classes(file)
+      file.xpath('./class').count > 0
+    end
+
+    def has_traits(file)
+      file.xpath('./trait').count > 0
+    end
 
     def docblock_for(node)
       {
@@ -111,6 +184,21 @@ module OneDoc
         }
       end
     end
+
+    def new_traits(node)
+      node.xpath('./trait').map do |klass|
+        a = {
+            :structure => 'trait',
+            :name => name_for(klass),
+            :doc => docblock_for(klass),
+            :members => []
+        }
+
+        new_functions(klass, a)
+
+        a
+      end
+    end
     #static="false" visibility="public" namespace="Human" line="21"
     def properties_for(node)
       node.xpath('./property').map do |prop|
@@ -120,6 +208,21 @@ module OneDoc
             :line => prop.attribute('line').value,
             :name => name_for(prop),
             :doc => docblock_for(prop)
+        }
+      end
+    end
+
+    def new_properties(node, hash)
+      node.xpath('./property').map do |prop|
+        hash[:members] << {
+            :type => 'property',
+            :value => {
+                :visibility => prop.attribute('visibility').value,
+                :static => prop.attribute('static').value,
+                :line => prop.attribute('line').value,
+                :name => name_for(prop),
+                :doc => docblock_for(prop)
+            }
         }
       end
     end

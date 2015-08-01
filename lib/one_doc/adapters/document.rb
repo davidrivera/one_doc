@@ -39,16 +39,25 @@ module OneDoc
       []
     end
 
-    def export
-      @hash = {}
+    # def export
+    #   @hash = {}
+    #
+    #   collect_files(files)
+    #
+    #   @hash[:files].map! do |file|
+    #     file[:classes]
+    #   end
+    #
+    #   @hash
+    # end
 
-      collect_files(files)
+    protected
+    def file_hash_for(file)
+      md5 = Digest::MD5.new
 
-      @hash[:files].map! do |file|
-        file[:classes]
-      end
+      md5.update File.read(@target+'/'+file)
 
-      @hash
+      md5.hexdigest
     end
 
     private
@@ -67,12 +76,5 @@ module OneDoc
       end
     end
 
-    def file_hash_for(file)
-      md5 = Digest::MD5.new
-
-      md5.update File.read(@target+'/'+file)
-
-      md5.hexdigest
-    end
   end
 end
