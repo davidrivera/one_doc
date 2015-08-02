@@ -19,3 +19,4 @@ end
 require 'one_doc/adapters/registry'
 require 'one_doc/adapters/document'
 require 'one_doc/adapters/php_document'
+require 'one_doc/adapters/js_document'

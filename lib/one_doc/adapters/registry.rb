@@ -11,10 +11,13 @@ module OneDoc
       @registered_handlers << [block, handler_class]
     end
 
-    def handler_for(target)
-      @registered_handlers.each do |tester, handler|
-        return handler if tester.call(target)
+    # TODO: refactor
+    def handlers_for(target)
+      handler = @registered_handlers.select do |tester, handler|
+        tester.call(target)
       end
+
+      handler.map &:last
     end
 
     def registered?(target)
@@ -24,7 +27,9 @@ module OneDoc
     end
 
     def for(target, dir)
-      handler_for(target).new(dir)
+      handlers_for(target).map do |handler|
+        handler.new(dir)
+      end
     end
   end
 end
